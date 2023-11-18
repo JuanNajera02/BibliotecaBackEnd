@@ -6,6 +6,11 @@ class Facultad(models.Model):
 class Carrera(models.Model):
     nombre = models.CharField(max_length=100)
 
+class Usuario(models.Model):
+    nombreCompleto = models.CharField(max_length=255)
+    usuario = models.CharField(max_length=50, unique=True)
+    password = models.CharField(max_length=128)
+
 class RDU(models.Model):
     SEXO_CHOICES = [
         ('MASCULINO', 'Masculino'),

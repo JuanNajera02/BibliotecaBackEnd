@@ -7,6 +7,7 @@ router = routers.DefaultRouter()
 router.register(r'rdus', views.RDUViewSet)
 router.register(r'facultades', views.FacultadViewSet)
 router.register(r'carreras', views.CarreraViewSet)
+router.register(r'usuarios', views.UsuarioViewSet)
 
 urlpatterns = [
     # Otras rutas URL
