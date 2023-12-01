@@ -10,11 +10,15 @@ from .models import Facultad
 from .serializers import FacultadSerializer
 from .models import Carrera
 from .serializers import CarreraSerializer
-from .models import Usuario
-from .serializers import UsuarioSerializer
+from .models import Administradores
+from .serializers import AdministradoresSerializer
 from .models import TipoUsuario
 from .serializers import TipoUsuarioSerializer
+from .models import Visitias
+from .serializers import VisitiasSerializer
 from django.db.models import Count, Sum, Case, When, IntegerField
+import string
+import random
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models.functions import Coalesce
@@ -23,11 +27,86 @@ from django.db.models import OuterRef, Subquery
 
 
 
+
+
 class RDUViewSet(viewsets.ModelViewSet):
     queryset = RDU.objects.all()
     serializer_class = RDUSerializer
 
-    ## http://127.0.0.1:8000/gestion/rdus/generarReporteFront?fecha_inicio=2023-01-01&fecha_fin=2023-12-31
+    @action(detail=False, methods=['GET'])
+    def verificar_matricula(self, request):
+        matricula = request.query_params.get('matricula', None)
+
+        if matricula is None:
+            return Response({'error': 'Debes proporcionar una matrícula'}, status=400)
+
+        try:
+            rdu_obj = RDU.objects.get(matricula=matricula)
+            serializer = RDUSerializer(rdu_obj)
+            return Response(serializer.data)
+        except RDU.DoesNotExist:
+            return Response({'error': 'Matrícula no encontrada'}, status=404)
+
+    @action(detail=False, methods=['POST'])
+    def generar_matricula(self, request):
+        matricula = self.generar_matricula_unico()
+
+        # Puedes hacer lo que quieras con la matrícula, por ejemplo, guardarla en tu base de datos.
+        # Si estás utilizando Django ORM, puedes hacer algo como:
+        # TuModelo.objects.create(matricula=matricula)
+
+        return Response({'matricula': matricula})
+
+    def generar_matricula_unico(self):
+        longitud_matricula = 8
+        matricula = self.generar_matricula_aleatoria(longitud_matricula)
+
+        # Verificar si la matrícula ya existe en la base de datos
+        while RDU.objects.filter(matricula=matricula).exists():
+            matricula = self.generar_matricula_aleatoria(longitud_matricula)
+
+        return matricula
+
+    def generar_matricula_aleatoria(self, longitud):
+        caracteres = string.ascii_uppercase + string.digits
+        return ''.join(random.choice(caracteres) for _ in range(longitud))
+    
+class FacultadViewSet(viewsets.ModelViewSet):
+    queryset = Facultad.objects.all()
+    serializer_class = FacultadSerializer
+
+class CarreraViewSet(viewsets.ModelViewSet):
+    queryset = Carrera.objects.all()
+    serializer_class = CarreraSerializer
+
+class AdministradoresViewSet(viewsets.ModelViewSet):
+    queryset = Administradores.objects.all()
+    serializer_class = AdministradoresSerializer
+
+    @action(detail=False, methods=['POST'])
+    def validar_usuario(self, request):
+        usuario = request.data.get('usuario', None)
+        password = request.data.get('password', None)
+
+        if usuario is None or password is None:
+            return Response({'error': 'Debes proporcionar usuario y contraseña'}, status=400)
+
+        try:
+            usuario_obj = Administradores.objects.get(usuario=usuario, password=password)
+            return Response({'nombre': usuario_obj.nombre, 'mensaje': 'Exito'})
+        except Administradores.DoesNotExist:
+            return Response({'error': 'Usuario no encontrado o contraseña incorrecta'}, status=404)
+    
+class TipoUsuarioViewSet(viewsets.ModelViewSet):
+    queryset = TipoUsuario.objects.all()
+    serializer_class = TipoUsuarioSerializer
+
+
+class VisitiasViewSet(viewsets.ModelViewSet):
+    queryset = Visitias.objects.all()
+    serializer_class = VisitiasSerializer
+
+
     @action(detail=False, methods=['GET'])
     def generarReporteFront(self, request):
         fecha_inicio = request.query_params.get('fecha_inicio')
@@ -37,48 +116,46 @@ class RDUViewSet(viewsets.ModelViewSet):
         fecha_fin = timezone.datetime.strptime(fecha_fin, '%Y-%m-%d').date() if fecha_fin else None
 
         if fecha_inicio and fecha_fin:
-            rdu_records = RDU.objects.filter(fechayhora__date__range=[fecha_inicio, fecha_fin])
+            visitas_records = Visitias.objects.filter(fechayhora__date__range=[fecha_inicio, fecha_fin])
         else:
-            rdu_records = RDU.objects.all()
+            visitas_records = Visitias.objects.all()
 
-        rdu_am = rdu_records.filter(fechayhora__hour__lt=12)
-        rdu_pm = rdu_records.filter(fechayhora__hour__gte=12)
+        visitas_am = visitas_records.filter(fechayhora__hour__lt=12)
+        visitas_pm = visitas_records.filter(fechayhora__hour__gte=12)
 
-        stats_am = self.get_statistics(rdu_am)
-        stats_pm = self.get_statistics(rdu_pm)
-        stats_general = self.get_statistics(rdu_records)
+        stats_am = self.get_statistics(visitas_am, 'mañana')
+        stats_pm = self.get_statistics(visitas_pm, 'tarde')
+        stats_general = self.get_statistics(visitas_records, 'general')
 
         result = self.generate_report(stats_am, stats_pm, stats_general)
 
         return Response(result)
 
-    def get_statistics(self, queryset):
-        # Obtener tipos de usuario únicos para cada facultad y carrera
+    def get_statistics(self, queryset, horario):
         tipos_usuario_stats = queryset.values(
-            'id_carrera__nombre',
-            'id_carrera__facultad__nombre',
-            'tipoUsuario__nombre'
+            'idRDU__id_carrera__nombre',
+            'idRDU__id_carrera__facultad__nombre',
+            'idRDU__tipoUsuario__nombre'
         ).annotate(
             total=Count('id')
         ).values(
-            'id_carrera__nombre',
-            'id_carrera__facultad__nombre',
-            'tipoUsuario__nombre',
+            'idRDU__id_carrera__nombre',
+            'idRDU__id_carrera__facultad__nombre',
+            'idRDU__tipoUsuario__nombre',
             'total'
         )
 
-        # Estadísticas por facultad y carrera
         stats_facultad_carrera = queryset.values(
-            'id_carrera__nombre',
-            'id_carrera__facultad__nombre',
+            'idRDU__id_carrera__nombre',
+            'idRDU__id_carrera__facultad__nombre',
         ).annotate(
             total=Count('id'),
             hombres=Coalesce(
-                Sum(Case(When(sexo='MASCULINO', then=1), default=0, output_field=IntegerField())),
+                Sum(Case(When(idRDU__sexo='MASCULINO', then=1), default=0, output_field=IntegerField())),
                 0
             ),
             mujeres=Coalesce(
-                Sum(Case(When(sexo='FEMENINO', then=1), default=0, output_field=IntegerField())),
+                Sum(Case(When(idRDU__sexo='FEMENINO', then=1), default=0, output_field=IntegerField())),
                 0
             ),
         )
@@ -86,36 +163,50 @@ class RDUViewSet(viewsets.ModelViewSet):
         return {
             'facultad_carrera': [
                 {
-                    'id_carrera__nombre': entry['id_carrera__nombre'],
-                    'id_carrera__facultad__nombre': entry['id_carrera__facultad__nombre'],
+                    'id_carrera__nombre': entry['idRDU__id_carrera__nombre'],
+                    'id_carrera__facultad__nombre': entry['idRDU__id_carrera__facultad__nombre'],
                     'total': entry['total'],
                     'hombres': entry['hombres'],
                     'mujeres': entry['mujeres'],
                     'tipos_usuario': [
                         {
-                            'nombre': tipo_entry['tipoUsuario__nombre'],
+                            'nombre': tipo_entry['idRDU__tipoUsuario__nombre'],
                             'total': tipo_entry['total'],
                         } for tipo_entry in tipos_usuario_stats
-                        if tipo_entry['id_carrera__nombre'] == entry['id_carrera__nombre'] and
-                        tipo_entry['id_carrera__facultad__nombre'] == entry['id_carrera__facultad__nombre']
+                        if tipo_entry['idRDU__id_carrera__nombre'] == entry['idRDU__id_carrera__nombre'] and
+                        tipo_entry['idRDU__id_carrera__facultad__nombre'] == entry['idRDU__id_carrera__facultad__nombre']
                     ],
                 } for entry in stats_facultad_carrera
             ],
             'sexo': {
                 'hombres': stats_facultad_carrera.aggregate(Sum('hombres'))['hombres__sum'] or 0,
                 'mujeres': stats_facultad_carrera.aggregate(Sum('mujeres'))['mujeres__sum'] or 0,
+                'total': stats_facultad_carrera.aggregate(Sum('total'))['total__sum'] or 0,
             },
+            'horario': horario,
         }
 
     def generate_report(self, stats_am, stats_pm, stats_general):
-        # Aquí construyes el informe como desees
-        # Puedes usar las variables stats_am, stats_pm y stats_general
-        # para obtener la información necesaria y construir el informe
-
-        # Obtener totales de tipos de usuario en la mañana, tarde y en general
         total_tipos_usuario_am = self.get_total_tipos_usuario(stats_am)
         total_tipos_usuario_pm = self.get_total_tipos_usuario(stats_pm)
         total_tipos_usuario_general = self.get_total_tipos_usuario(stats_general)
+
+        # Eliminar la sección "horario" del diccionario
+        stats_am.pop('horario', None)
+        stats_pm.pop('horario', None)
+        stats_general.pop('horario', None)
+
+        # Agregar el total de registros de hombres y mujeres en lugar de "horario"
+        total_hombres = (
+            stats_am['sexo']['hombres']
+            + stats_pm['sexo']['hombres']
+            + stats_general['sexo']['hombres']
+        )
+        total_mujeres = (
+            stats_am['sexo']['mujeres']
+            + stats_pm['sexo']['mujeres']
+            + stats_general['sexo']['mujeres']
+        )
 
         report = {
             'mañana': {
@@ -135,9 +226,9 @@ class RDUViewSet(viewsets.ModelViewSet):
         return report
 
     def get_total_tipos_usuario(self, stats):
-        # Obtener totales de tipos de usuario en la mañana, tarde y en general
-        total_tipos_usuario = stats['facultad_carrera'][0]['tipos_usuario']
-        for entry in stats['facultad_carrera'][1:]:
+        total_tipos_usuario = []
+
+        for entry in stats['facultad_carrera']:
             for tipo_usuario in entry['tipos_usuario']:
                 tipo_usuario_entry = next(
                     (t for t in total_tipos_usuario if t['nombre'] == tipo_usuario['nombre']),
@@ -152,45 +243,3 @@ class RDUViewSet(viewsets.ModelViewSet):
                     })
 
         return total_tipos_usuario
-    
-    @action(detail=True, methods=['PUT'])
-    def update_record(self, request, pk=None):
-        rdu_instance = self.get_object()
-        serializer = RDUSerializer(rdu_instance, data=request.data, partial=True)
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        else:
-            return Response(serializer.errors, status=400)
-
-    
-class FacultadViewSet(viewsets.ModelViewSet):
-    queryset = Facultad.objects.all()
-    serializer_class = FacultadSerializer
-
-class CarreraViewSet(viewsets.ModelViewSet):
-    queryset = Carrera.objects.all()
-    serializer_class = CarreraSerializer
-
-class UsuarioViewSet(viewsets.ModelViewSet):
-    queryset = Usuario.objects.all()
-    serializer_class = UsuarioSerializer
-
-    @action(detail=False, methods=['POST'])
-    def validar_usuario(self, request):
-        usuario = request.data.get('usuario', None)
-        password = request.data.get('password', None)
-
-        if usuario is None or password is None:
-            return Response({'error': 'Debes proporcionar usuario y contraseña'}, status=400)
-
-        try:
-            usuario_obj = Usuario.objects.get(usuario=usuario, password=password)
-            return Response({'nombre': usuario_obj.nombre, 'mensaje': 'Exito'})
-        except Usuario.DoesNotExist:
-            return Response({'error': 'Usuario no encontrado o contraseña incorrecta'}, status=404)
-    
-class TipoUsuarioViewSet(viewsets.ModelViewSet):
-    queryset = TipoUsuario.objects.all()
-    serializer_class = TipoUsuarioSerializer

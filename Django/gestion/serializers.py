@@ -2,8 +2,9 @@ from rest_framework import serializers
 from .models import RDU
 from .models import Facultad
 from .models import Carrera
-from .models import Usuario
+from .models import Administradores
 from .models import TipoUsuario
+from .models import Visitias
 
 
 class RDUSerializer(serializers.ModelSerializer):
@@ -21,12 +22,17 @@ class CarreraSerializer(serializers.ModelSerializer):
         model = Carrera
         fields = '__all__'
 
-class UsuarioSerializer(serializers.ModelSerializer):
+class AdministradoresSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Usuario
+        model = Administradores
         fields = '__all__'
 
 class TipoUsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = TipoUsuario
+        fields = '__all__'
+    
+class VisitiasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Visitias
         fields = '__all__'
