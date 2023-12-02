@@ -19,6 +19,7 @@ from .serializers import VisitiasSerializer
 from django.db.models import Count, Sum, Case, When, IntegerField
 import string
 import random
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models.functions import Coalesce
@@ -28,34 +29,19 @@ from django.db.models import OuterRef, Subquery
 
 
 
-
 class RDUViewSet(viewsets.ModelViewSet):
     queryset = RDU.objects.all()
     serializer_class = RDUSerializer
 
-    @action(detail=False, methods=['GET'])
-    def verificar_matricula(self, request):
-        matricula = request.query_params.get('matricula', None)
+    def create(self, request, *args, **kwargs):
+        matricula = request.data.get('matricula', None)
 
         if matricula is None:
-            return Response({'error': 'Debes proporcionar una matrícula'}, status=400)
+            # Si la matrícula está vacía, genera una matrícula única
+            matricula = self.generar_matricula_unico()
+            request.data['matricula'] = matricula
 
-        try:
-            rdu_obj = RDU.objects.get(matricula=matricula)
-            serializer = RDUSerializer(rdu_obj)
-            return Response(serializer.data)
-        except RDU.DoesNotExist:
-            return Response({'error': 'Matrícula no encontrada'}, status=404)
-
-    @action(detail=False, methods=['POST'])
-    def generar_matricula(self, request):
-        matricula = self.generar_matricula_unico()
-
-        # Puedes hacer lo que quieras con la matrícula, por ejemplo, guardarla en tu base de datos.
-        # Si estás utilizando Django ORM, puedes hacer algo como:
-        # TuModelo.objects.create(matricula=matricula)
-
-        return Response({'matricula': matricula})
+        return super().create(request, *args, **kwargs)
 
     def generar_matricula_unico(self):
         longitud_matricula = 8
