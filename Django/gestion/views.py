@@ -1,3 +1,4 @@
+from django.http import HttpResponse
 from rest_framework import viewsets
 from django.db.models import Count
 from django.db.models.functions import TruncHour
@@ -25,7 +26,7 @@ from rest_framework.response import Response
 from django.db.models.functions import Coalesce
 from django.db.models import Q
 from django.db.models import OuterRef, Subquery
-
+import openpyxl
 
 
 
@@ -114,8 +115,58 @@ class VisitiasViewSet(viewsets.ModelViewSet):
         stats_general = self.get_statistics(visitas_records, 'general')
 
         result = self.generate_report(stats_am, stats_pm, stats_general)
+        
+        workbook = openpyxl.load_workbook('CONCENTRADO_DE_REGISTRO_DIARIO_DE_USUARIOS.xlsx')
+        sheet = workbook.active
 
-        return Response(result)
+        #------------------------ INGENIERIA  CIVIL-----------------------
+        CELL_CIVIL_ALUMNOS = sheet.cell(row=14, column=2)
+        CELL_CIVIL_DOCENTES = sheet.cell(row=14, column=3)
+        CELL_CIVIL_INVESTIGADORES = sheet.cell(row=14, column=4)
+        CELL_CIVIL_MUJERES = sheet.cell(row=14, column=5)
+        CELL_CIVIL_HOMBRES = sheet.cell(row=14, column=6)
+
+        #------------------------ INGENIERIA  SOFTWARE-----------------------
+        CELL_SOFTWARE_ALUMNOS = sheet.cell(row=14, column=12)
+        CELL_SOFTWARE_DOCENTES = sheet.cell(row=14, column=13)
+        CELL_SOFTWARE_INVESTIGADORES = sheet.cell(row=14, column=14)
+        CELL_SOFTWARE_MUJERES = sheet.cell(row=14, column=15)
+        CELL_SOFTWARE_HOMBRES = sheet.cell(row=14, column=16)
+
+        carrera = stats_general['facultad_carrera']
+        for i in range(len(carrera)):
+            tiposDeUsuario =  carrera[i]['tipos_usuario']
+            MUJERES = carrera[i]['mujeres']
+            HOMBRES = carrera[i]['hombres']
+            ALUMNOS = 0
+            DOCENTES = 0
+            INVESTIGADORES = 0
+            for tipo in tiposDeUsuario:
+                print("TIPO " , tipo)
+                ALUMNOS = tipo['total'] if tipo['nombre'] == 'Alumno Interno' else ALUMNOS
+                INVESTIGADORES = tipo['total'] if tipo['nombre'] == 'Investigador Interno' else INVESTIGADORES
+                DOCENTES = tipo['total'] if tipo['nombre'] == 'Docente Interno' else DOCENTES
+                
+            if carrera[i]['id_carrera__nombre'] == 'Ingenieria Civil':
+                CELL_CIVIL_ALUMNOS.value = ALUMNOS
+                CELL_CIVIL_DOCENTES.value = DOCENTES
+                CELL_CIVIL_INVESTIGADORES.value = INVESTIGADORES
+                CELL_CIVIL_MUJERES.value = MUJERES
+                CELL_CIVIL_HOMBRES.value = HOMBRES
+            elif carrera[i]['id_carrera__nombre'] == 'Ingenieria de Software':
+                CELL_SOFTWARE_ALUMNOS.value = ALUMNOS
+                CELL_SOFTWARE_DOCENTES.value = DOCENTES
+                CELL_SOFTWARE_INVESTIGADORES.value = INVESTIGADORES
+                CELL_SOFTWARE_MUJERES.value = MUJERES
+                CELL_SOFTWARE_HOMBRES.value = HOMBRES
+                
+
+        
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename=CONCENTRADO_DE_REGISTRO_DIARIO_DE_USUARIOS.xlsx'
+        workbook.save(response)
+        
+        return response
 
     def get_statistics(self, queryset, horario):
         tipos_usuario_stats = queryset.values(
