@@ -196,8 +196,15 @@ class VisitiasViewSet(viewsets.ModelViewSet):
         # Obtener los objetos RDU correspondientes
         rdu_objects = RDU.objects.filter(id__in=visitias_records.values_list('idRDU', flat=True))
 
-        # Serializar los objetos RDU
+        # Obtener las fechas de visita
+        fechas_visita = visitias_records.values_list('fechayhora', flat=True)
+
+        # Serializar los objetos RDU con fechas de visita
         serializer = RDUSerializer(rdu_objects, many=True)
+
+        # Agregar las fechas de visita a cada objeto serializado
+        for i, data in enumerate(serializer.data):
+            data['fecha_visita'] = fechas_visita[i].strftime('%Y-%m-%d %H:%M:%S')
 
         # Obtener la cantidad de registros
         cantidad_registros = visitias_records.count()
