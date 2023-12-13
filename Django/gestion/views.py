@@ -87,6 +87,7 @@ class CarreraViewSet(viewsets.ModelViewSet):
     queryset = Carrera.objects.all()
     serializer_class = CarreraSerializer
 
+
     @action(detail=True, methods=['put'])
     def modificar_carrera(self, request, pk=None):
         carrera = self.get_object()
@@ -154,6 +155,18 @@ class TipoUsuarioViewSet(viewsets.ModelViewSet):
 class VisitiasViewSet(viewsets.ModelViewSet):
     queryset = Visitias.objects.all()
     serializer_class = VisitiasSerializer
+
+    @action(detail=False, methods=['GET'])
+    def obtener_info_por_matricula(self, request):
+        matricula = request.query_params.get('matricula', None)
+        if matricula is None:
+            return Response({'error': 'Debes proporcionar una matrícula'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Buscar el objeto RDU que tiene la matrícula proporcionada
+        rdu_instance = get_object_or_404(RDU, matricula=matricula)
+        # Serializar todos los campos de la entidad RDU
+        serializer = RDUSerializer(rdu_instance)
+        return Response(serializer.data)
 
     @action(detail=False, methods=['GET'])
     def generarEstadisticasFront(self, request):
