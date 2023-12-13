@@ -8,9 +8,18 @@ from .models import Visitias
 
 
 class RDUSerializer(serializers.ModelSerializer):
+    nombre_carrera = serializers.SerializerMethodField()
+    id_facultad = serializers.SerializerMethodField()
+
     class Meta:
         model = RDU
-        fields = '__all__'
+        fields = ['id', 'matricula', 'nombre', 'apellidos', 'sexo', 'tipoUsuario', 'id_carrera', 'nombre_carrera', 'id_facultad']
+
+    def get_nombre_carrera(self, obj):
+        return obj.id_carrera.nombre if obj.id_carrera else None
+
+    def get_id_facultad(self, obj):
+        return obj.id_carrera.facultad.id if obj.id_carrera and obj.id_carrera.facultad else None
 
 class FacultadSerializer(serializers.ModelSerializer):
     class Meta:

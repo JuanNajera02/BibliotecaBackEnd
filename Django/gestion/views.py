@@ -155,7 +155,7 @@ class VisitiasViewSet(viewsets.ModelViewSet):
     serializer_class = VisitiasSerializer
 
     @action(detail=False, methods=['GET'])
-    def obtener_id_por_matricula(self, request):
+    def obtener_info_por_matricula(self, request):
         matricula = request.query_params.get('matricula', None)
 
         if matricula is None:
@@ -164,7 +164,10 @@ class VisitiasViewSet(viewsets.ModelViewSet):
         # Buscar el objeto RDU que tiene la matrícula proporcionada
         rdu_instance = get_object_or_404(RDU, matricula=matricula)
 
-        return Response({'id': rdu_instance.id})
+        # Serializar todos los campos de la entidad RDU
+        serializer = RDUSerializer(rdu_instance)
+
+        return Response(serializer.data)
 
 
     @action(detail=False, methods=['GET'])
@@ -222,6 +225,13 @@ class VisitiasViewSet(viewsets.ModelViewSet):
         CELL_DERECHO_MIXTO_MUJERES = sheet.cell(row=8, column=20)
         CELL_DERECHO_MIXTO_HOMBRES = sheet.cell(row=8, column=21)
 
+        #------------------------ MAESTRIA DER -----------------------
+        CELL_MAESTRIA_DER_ALUMNOS = sheet.cell(row=8, column=22)
+        CELL_MAESTRIA_DER_DOCENTES = sheet.cell(row=8, column=23)
+        CELL_MAESTRIA_DER_INVESTIGADORES = sheet.cell(row=8, column=24)
+        CELL_MAESTRIA_DER_MUJERES = sheet.cell(row=8, column=25)
+        CELL_MAESTRIA_DER_HOMBRES = sheet.cell(row=8, column=26)
+
 
 
 
@@ -260,6 +270,21 @@ class VisitiasViewSet(viewsets.ModelViewSet):
         CELL_NANO_DOCENTES = sheet.cell(row=14, column=23)
         CELL_NANO_INVESTIGADORES = sheet.cell(row=14, column=24)
         CELL_NANO_MUJERES = sheet.cell(row=14, column=25)
+        CELL_NANO_HOMBRES = sheet.cell(row=14, column=26)
+
+        #------------------------ MAESTRIA ING ------------------------
+        CELL_MAESTRIA_ING_ALUMNOS = sheet.cell(row=14, column=27)
+        CELL_MAESTRIA_ING_DOCENTES = sheet.cell(row=14, column=28)
+        CELL_MAESTRIA_ING_INVESTIGADORES = sheet.cell(row=14, column=29)
+        CELL_MAESTRIA_ING_MUJERES = sheet.cell(row=14, column=30)
+        CELL_MAESTRIA_ING_HOMBRES = sheet.cell(row=14, column=31)
+
+        #------------------------ DOCTORADO ING -----------------------
+        CELL_DOCTORADO_ING_ALUMNOS = sheet.cell(row=14, column=32)
+        CELL_DOCTORADO_ING_DOCENTES = sheet.cell(row=14, column=33)
+        CELL_DOCTORADO_ING_INVESTIGADORES = sheet.cell(row=14, column=34)
+        CELL_DOCTORADO_ING_MUJERES = sheet.cell(row=14, column=35)
+        CELL_DOCTORADO_ING_HOMBRES = sheet.cell(row=14, column=36)
 
         #------------------------ UNIDAD ACADEMICA DE NEGOCIOS -----------------------
         #------------------------ LRCI -----------------------
@@ -297,6 +322,20 @@ class VisitiasViewSet(viewsets.ModelViewSet):
         CELL_LDEN_MIXTO_MUJERES = sheet.cell(row=20, column=25)
         CELL_LDEN_MIXTO_HOMBRES = sheet.cell(row=20, column=26)
 
+        #------------------------ MAESTRIA NEG -----------------------
+        CELL_MAESTRIA_NEG_ALUMNOS = sheet.cell(row=20, column=27)
+        CELL_MAESTRIA_NEG_DOCENTES = sheet.cell(row=20, column=28)
+        CELL_MAESTRIA_NEG_INVESTIGADORES = sheet.cell(row=20, column=29)
+        CELL_MAESTRIA_NEG_MUJERES = sheet.cell(row=20, column=30)
+        CELL_MAESTRIA_NEG_HOMBRES = sheet.cell(row=20, column=31)
+
+        #------------------------ DOCTORADO NEG -----------------------
+        CELL_DOCTORADO_NEG_ALUMNOS = sheet.cell(row=20, column=32)
+        CELL_DOCTORADO_NEG_DOCENTES = sheet.cell(row=20, column=33)
+        CELL_DOCTORADO_NEG_INVESTIGADORES = sheet.cell(row=20, column=34)
+        CELL_DOCTORADO_NEG_MUJERES = sheet.cell(row=20, column=35)
+        CELL_DOCTORADO_NEG_HOMBRES = sheet.cell(row=20, column=36)
+
         #------------------------ FACULTAD DE ENFERMERIA -----------------------
 
         #------------------------ ENFERMERIA -----------------------
@@ -313,6 +352,20 @@ class VisitiasViewSet(viewsets.ModelViewSet):
         CELL_TECNICO_ENFERMERIA_INVESTIGADORES = sheet.cell(row=26, column=9)
         CELL_TECNICO_ENFERMERIA_MUJERES = sheet.cell(row=26, column=10)
         CELL_TECNICO_ENFERMERIA_HOMBRES = sheet.cell(row=26, column=11)
+
+        #------------------------ MAESTRIA ENFERMERIA -----------------------
+        CELL_MAESTRIA_ENFERMERIA_ALUMNOS = sheet.cell(row=26, column=12)
+        CELL_MAESTRIA_ENFERMERIA_DOCENTES = sheet.cell(row=26, column=13)
+        CELL_MAESTRIA_ENFERMERIA_INVESTIGADORES = sheet.cell(row=26, column=14)
+        CELL_MAESTRIA_ENFERMERIA_MUJERES = sheet.cell(row=26, column=15)
+        CELL_MAESTRIA_ENFERMERIA_HOMBRES = sheet.cell(row=26, column=16)
+
+        #------------------------ DOCTORADO ENFERMERIA -----------------------
+        CELL_DOCTORADO_ENFERMERIA_ALUMNOS = sheet.cell(row=26, column=17)
+        CELL_DOCTORADO_ENFERMERIA_DOCENTES = sheet.cell(row=26, column=18)
+        CELL_DOCTORADO_ENFERMERIA_INVESTIGADORES = sheet.cell(row=26, column=19)
+        CELL_DOCTORADO_ENFERMERIA_MUJERES = sheet.cell(row=26, column=20)
+        CELL_DOCTORADO_ENFERMERIA_HOMBRES = sheet.cell(row=26, column=21)
 
         #------------------------ FACULTAD DE CIENCIAS DE LA EDUCACION -----------------------
 
@@ -368,6 +421,52 @@ class VisitiasViewSet(viewsets.ModelViewSet):
         CELL_EDU_DEPORTE_MUJERES = sheet.cell(row=32, column=25)
         CELL_EDU_DEPORTE_HOMBRES = sheet.cell(row=32, column=26)
 
+        #------------------------ VARIOS -----------------------
+
+        #------------------------ MEDICINA -----------------------
+        CELL_MEDICINA_ALUMNOS = sheet.cell(row=38, column=2)
+        CELL_MEDICINA_DOCENTES = sheet.cell(row=38, column=3)
+        CELL_MEDICINA_INVESTIGADORES = sheet.cell(row=38, column=4)
+        CELL_MEDICINA_MUJERES = sheet.cell(row=38, column=5)
+        CELL_MEDICINA_HOMBRES = sheet.cell(row=38, column=6)
+
+        #------------------------ COMUNICACION -----------------------
+        CELL_COMUNICACION_ALUMNOS = sheet.cell(row=38, column=7)
+        CELL_COMUNICACION_DOCENTES = sheet.cell(row=38, column=8)
+        CELL_COMUNICACION_INVESTIGADORES = sheet.cell(row=38, column=9)
+        CELL_COMUNICACION_MUJERES = sheet.cell(row=38, column=10)
+        CELL_COMUNICACION_HOMBRES = sheet.cell(row=38, column=11)
+
+        #------------------------ INGLES -----------------------
+        CELL_INGLES_ALUMNOS = sheet.cell(row=38, column=12)
+        CELL_INGLES_DOCENTES = sheet.cell(row=38, column=13)
+        CELL_INGLES_INVESTIGADORES = sheet.cell(row=38, column=14)
+        CELL_INGLES_MUJERES = sheet.cell(row=38, column=15)
+        CELL_INGLES_HOMBRES = sheet.cell(row=38, column=16)
+
+        #------------------------ PREPA CU -----------------------
+        CELL_PREPA_CU_ALUMNOS = sheet.cell(row=38, column=17)
+        CELL_PREPA_CU_DOCENTES = sheet.cell(row=38, column=18)
+        CELL_PREPA_CU_INVESTIGADORES = sheet.cell(row=38, column=19)
+        CELL_PREPA_CU_MUJERES = sheet.cell(row=38, column=20)
+        CELL_PREPA_CU_HOMBRES = sheet.cell(row=38, column=21)
+
+        #------------------------ OTROS -----------------------
+        CELL_OTROS_ALUMNOS = sheet.cell(row=38, column=22)
+        CELL_OTROS_DOCENTES = sheet.cell(row=38, column=23)
+        CELL_OTROS_INVESTIGADORES = sheet.cell(row=38, column=24)
+        CELL_OTROS_MUJERES = sheet.cell(row=38, column=25)
+        CELL_OTROS_HOMBRES = sheet.cell(row=38, column=26)
+
+        #------------------------ EXTERNOS -----------------------
+        CELL_EXTERNOS_ALUMNOS = sheet.cell(row=38, column=27)
+        CELL_EXTERNOS_DOCENTES = sheet.cell(row=38, column=28)
+        CELL_EXTERNOS_INVESTIGADORES = sheet.cell(row=38, column=29)
+        CELL_EXTERNOS_MUJERES = sheet.cell(row=38, column=30)
+        CELL_EXTERNOS_HOMBRES = sheet.cell(row=38, column=31)
+
+
+
 
 
 
@@ -384,9 +483,9 @@ class VisitiasViewSet(viewsets.ModelViewSet):
             INVESTIGADORES = 0
             for tipo in tiposDeUsuario:
                 print("TIPO " , tipo)
-                ALUMNOS = tipo['total'] if tipo['nombre'] == 'Alumno Interno' else ALUMNOS
-                INVESTIGADORES = tipo['total'] if tipo['nombre'] == 'Investigador Interno' else INVESTIGADORES
-                DOCENTES = tipo['total'] if tipo['nombre'] == 'Docente Interno' else DOCENTES
+                ALUMNOS = tipo['total'] if tipo['nombre'] == 'Alumno' else ALUMNOS
+                INVESTIGADORES = tipo['total'] if tipo['nombre'] == 'Investigador' else INVESTIGADORES
+                DOCENTES = tipo['total'] if tipo['nombre'] == 'Docente' else DOCENTES
 
             if carrera[i]['id_carrera__nombre'] == 'Derecho':
                 CELL_DERECHO_ALUMNOS.value = ALUMNOS
@@ -412,6 +511,12 @@ class VisitiasViewSet(viewsets.ModelViewSet):
                 CELL_DERECHO_MIXTO_INVESTIGADORES.value = INVESTIGADORES
                 CELL_DERECHO_MIXTO_MUJERES.value = MUJERES
                 CELL_DERECHO_MIXTO_HOMBRES.value = HOMBRES   
+            elif carrera[i]['id_carrera__nombre'] == 'Maestria der':
+                CELL_MAESTRIA_DER_ALUMNOS.value = ALUMNOS
+                CELL_MAESTRIA_DER_DOCENTES.value = DOCENTES
+                CELL_MAESTRIA_DER_INVESTIGADORES.value = INVESTIGADORES
+                CELL_MAESTRIA_DER_MUJERES.value = MUJERES
+                CELL_MAESTRIA_DER_HOMBRES.value = HOMBRES
             elif carrera[i]['id_carrera__nombre'] == 'Ingenieria civil':
                 CELL_CIVIL_ALUMNOS.value = ALUMNOS
                 CELL_CIVIL_DOCENTES.value = DOCENTES
@@ -441,6 +546,19 @@ class VisitiasViewSet(viewsets.ModelViewSet):
                 CELL_NANO_DOCENTES.value = DOCENTES
                 CELL_NANO_INVESTIGADORES.value = INVESTIGADORES
                 CELL_NANO_MUJERES.value = MUJERES
+                CELL_NANO_HOMBRES.value = HOMBRES
+            elif carrera[i]['id_carrera__nombre'] == 'Maestria ing':
+                CELL_MAESTRIA_ING_ALUMNOS.value = ALUMNOS
+                CELL_MAESTRIA_ING_DOCENTES.value = DOCENTES
+                CELL_MAESTRIA_ING_INVESTIGADORES.value = INVESTIGADORES
+                CELL_MAESTRIA_ING_MUJERES.value = MUJERES
+                CELL_MAESTRIA_ING_HOMBRES.value = HOMBRES
+            elif carrera[i]['id_carrera__nombre'] == 'Doctorado ing':
+                CELL_DOCTORADO_ING_ALUMNOS.value = ALUMNOS
+                CELL_DOCTORADO_ING_DOCENTES.value = DOCENTES
+                CELL_DOCTORADO_ING_INVESTIGADORES.value = INVESTIGADORES
+                CELL_DOCTORADO_ING_MUJERES.value = MUJERES
+                CELL_DOCTORADO_ING_HOMBRES.value = HOMBRES
             elif carrera[i]['id_carrera__nombre'] == 'Lrci':
                 CELL_LRCI_ALUMNOS.value = ALUMNOS
                 CELL_LRCI_DOCENTES.value = DOCENTES
@@ -471,6 +589,18 @@ class VisitiasViewSet(viewsets.ModelViewSet):
                 CELL_LDEN_MIXTO_INVESTIGADORES.value = INVESTIGADORES
                 CELL_LDEN_MIXTO_MUJERES.value = MUJERES
                 CELL_LDEN_MIXTO_HOMBRES.value = HOMBRES
+            elif carrera[i]['id_carrera__nombre'] == 'Maestria neg':
+                CELL_MAESTRIA_NEG_ALUMNOS.value = ALUMNOS
+                CELL_MAESTRIA_NEG_DOCENTES.value = DOCENTES
+                CELL_MAESTRIA_NEG_INVESTIGADORES.value = INVESTIGADORES
+                CELL_MAESTRIA_NEG_MUJERES.value = MUJERES
+                CELL_MAESTRIA_NEG_HOMBRES.value = HOMBRES
+            elif carrera[i]['id_carrera__nombre'] == 'Doctorado neg':
+                CELL_DOCTORADO_NEG_ALUMNOS.value = ALUMNOS
+                CELL_DOCTORADO_NEG_DOCENTES.value = DOCENTES
+                CELL_DOCTORADO_NEG_INVESTIGADORES.value = INVESTIGADORES
+                CELL_DOCTORADO_NEG_MUJERES.value = MUJERES
+                CELL_DOCTORADO_NEG_HOMBRES.value = HOMBRES
             elif carrera[i]['id_carrera__nombre'] == 'Enfermeria':
                 CELL_ENFERMERIA_ALUMNOS.value = ALUMNOS
                 CELL_ENFERMERIA_DOCENTES.value = DOCENTES
@@ -483,6 +613,18 @@ class VisitiasViewSet(viewsets.ModelViewSet):
                 CELL_TECNICO_ENFERMERIA_INVESTIGADORES.value = INVESTIGADORES
                 CELL_TECNICO_ENFERMERIA_MUJERES.value = MUJERES
                 CELL_TECNICO_ENFERMERIA_HOMBRES.value = HOMBRES
+            elif carrera[i]['id_carrera__nombre'] == 'Maestria enfermeria':
+                CELL_MAESTRIA_ENFERMERIA_ALUMNOS.value = ALUMNOS
+                CELL_MAESTRIA_ENFERMERIA_DOCENTES.value = DOCENTES
+                CELL_MAESTRIA_ENFERMERIA_INVESTIGADORES.value = INVESTIGADORES
+                CELL_MAESTRIA_ENFERMERIA_MUJERES.value = MUJERES
+                CELL_MAESTRIA_ENFERMERIA_HOMBRES.value = HOMBRES
+            elif carrera[i]['id_carrera__nombre'] == 'Doctorado enfermeria':
+                CELL_DOCTORADO_ENFERMERIA_ALUMNOS.value = ALUMNOS
+                CELL_DOCTORADO_ENFERMERIA_DOCENTES.value = DOCENTES
+                CELL_DOCTORADO_ENFERMERIA_INVESTIGADORES.value = INVESTIGADORES
+                CELL_DOCTORADO_ENFERMERIA_MUJERES.value = MUJERES
+                CELL_DOCTORADO_ENFERMERIA_HOMBRES.value = HOMBRES
             elif carrera[i]['id_carrera__nombre'] == 'Ciencias en edu':
                 CELL_CIENCIAS_EDU_ALUMNOS.value = ALUMNOS
                 CELL_CIENCIAS_EDU_DOCENTES.value = DOCENTES
@@ -525,6 +667,42 @@ class VisitiasViewSet(viewsets.ModelViewSet):
                 CELL_EDU_DEPORTE_INVESTIGADORES.value = INVESTIGADORES
                 CELL_EDU_DEPORTE_MUJERES.value = MUJERES
                 CELL_EDU_DEPORTE_HOMBRES.value = HOMBRES
+            elif carrera[i]['id_carrera__nombre'] == 'Medicina':
+                CELL_MEDICINA_ALUMNOS.value = ALUMNOS
+                CELL_MEDICINA_DOCENTES.value = DOCENTES
+                CELL_MEDICINA_INVESTIGADORES.value = INVESTIGADORES
+                CELL_MEDICINA_MUJERES.value = MUJERES
+                CELL_MEDICINA_HOMBRES.value = HOMBRES
+            elif carrera[i]['id_carrera__nombre'] == 'Comunicacion':
+                CELL_COMUNICACION_ALUMNOS.value = ALUMNOS
+                CELL_COMUNICACION_DOCENTES.value = DOCENTES
+                CELL_COMUNICACION_INVESTIGADORES.value = INVESTIGADORES
+                CELL_COMUNICACION_MUJERES.value = MUJERES
+                CELL_COMUNICACION_HOMBRES.value = HOMBRES
+            elif carrera[i]['id_carrera__nombre'] == 'Ingles':
+                CELL_INGLES_ALUMNOS.value = ALUMNOS
+                CELL_INGLES_DOCENTES.value = DOCENTES
+                CELL_INGLES_INVESTIGADORES.value = INVESTIGADORES
+                CELL_INGLES_MUJERES.value = MUJERES
+                CELL_INGLES_HOMBRES.value = HOMBRES
+            elif carrera[i]['id_carrera__nombre'] == 'Prepa cu':
+                CELL_PREPA_CU_ALUMNOS.value = ALUMNOS
+                CELL_PREPA_CU_DOCENTES.value = DOCENTES
+                CELL_PREPA_CU_INVESTIGADORES.value = INVESTIGADORES
+                CELL_PREPA_CU_MUJERES.value = MUJERES
+                CELL_PREPA_CU_HOMBRES.value = HOMBRES
+            elif carrera[i]['id_carrera__nombre'] == 'Otros':
+                CELL_OTROS_ALUMNOS.value = ALUMNOS
+                CELL_OTROS_DOCENTES.value = DOCENTES
+                CELL_OTROS_INVESTIGADORES.value = INVESTIGADORES
+                CELL_OTROS_MUJERES.value = MUJERES
+                CELL_OTROS_HOMBRES.value = HOMBRES
+            elif carrera[i]['id_carrera__nombre'] == 'Externos':
+                CELL_EXTERNOS_ALUMNOS.value = ALUMNOS
+                CELL_EXTERNOS_DOCENTES.value = DOCENTES
+                CELL_EXTERNOS_INVESTIGADORES.value = INVESTIGADORES
+                CELL_EXTERNOS_MUJERES.value = MUJERES
+                CELL_EXTERNOS_HOMBRES.value = HOMBRES
             
 
 
