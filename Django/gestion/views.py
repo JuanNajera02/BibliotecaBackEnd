@@ -64,9 +64,48 @@ class FacultadViewSet(viewsets.ModelViewSet):
     queryset = Facultad.objects.all()
     serializer_class = FacultadSerializer
 
+    @action(detail=True, methods=['put'])
+    def modificar_nombre(self, request, pk=None):
+        facultad = self.get_object()
+        nuevo_nombre = request.data.get('nombre', None)
+
+        if nuevo_nombre is None:
+            return Response({'error': 'Debes proporcionar un nuevo nombre'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Modificar el nombre de la facultad y guardar los cambios
+        facultad.nombre = nuevo_nombre
+        facultad.save()
+
+        # Serializar y devolver la respuesta
+        serializer = FacultadSerializer(facultad)
+        return Response(serializer.data)
+
+
+
 class CarreraViewSet(viewsets.ModelViewSet):
     queryset = Carrera.objects.all()
     serializer_class = CarreraSerializer
+
+    @action(detail=True, methods=['put'])
+    def modificar_carrera(self, request, pk=None):
+        carrera = self.get_object()
+
+        # Obtener los datos de la solicitud
+        nuevo_nombre = request.data.get('nombre', None)
+        nueva_facultad_id = request.data.get('facultad', None)
+
+        # Modificar los campos de la carrera si se proporcionan valores
+        if nuevo_nombre is not None:
+            carrera.nombre = nuevo_nombre
+        if nueva_facultad_id is not None:
+            carrera.facultad_id = nueva_facultad_id
+
+        # Guardar los cambios
+        carrera.save()
+
+        # Serializar y devolver la respuesta
+        serializer = CarreraSerializer(carrera)
+        return Response(serializer.data)
 
 class AdministradoresViewSet(viewsets.ModelViewSet):
     queryset = Administradores.objects.all()
@@ -89,6 +128,26 @@ class AdministradoresViewSet(viewsets.ModelViewSet):
 class TipoUsuarioViewSet(viewsets.ModelViewSet):
     queryset = TipoUsuario.objects.all()
     serializer_class = TipoUsuarioSerializer
+
+    @action(detail=True, methods=['put'])
+    def modificar_tipo_usuario(self, request, pk=None):
+        tipo_usuario = self.get_object()
+
+        # Obtener el nuevo nombre desde la solicitud
+        nuevo_nombre = request.data.get('nombre', None)
+
+        # Modificar el campo 'nombre' si se proporciona un nuevo valor
+        if nuevo_nombre is not None:
+            tipo_usuario.nombre = nuevo_nombre
+            tipo_usuario.save()
+
+            # Serializar y devolver la respuesta
+            serializer = TipoUsuarioSerializer(tipo_usuario)
+            return Response(serializer.data)
+
+        return Response({'error': 'Debes proporcionar un nuevo nombre'}, status=status.HTTP_400_BAD_REQUEST)
+
+    
 
 
 class VisitiasViewSet(viewsets.ModelViewSet):
