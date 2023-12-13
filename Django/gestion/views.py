@@ -27,6 +27,8 @@ from django.db.models.functions import Coalesce
 from django.db.models import Q
 from django.db.models import OuterRef, Subquery
 import openpyxl
+from django.shortcuts import get_object_or_404
+
 
 
 
@@ -92,6 +94,18 @@ class TipoUsuarioViewSet(viewsets.ModelViewSet):
 class VisitiasViewSet(viewsets.ModelViewSet):
     queryset = Visitias.objects.all()
     serializer_class = VisitiasSerializer
+
+    @action(detail=False, methods=['GET'])
+    def obtener_id_por_matricula(self, request):
+        matricula = request.query_params.get('matricula', None)
+
+        if matricula is None:
+            return Response({'error': 'Debes proporcionar una matrícula'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Buscar el objeto RDU que tiene la matrícula proporcionada
+        rdu_instance = get_object_or_404(RDU, matricula=matricula)
+
+        return Response({'id': rdu_instance.id})
 
 
     @action(detail=False, methods=['GET'])
