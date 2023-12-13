@@ -28,6 +28,7 @@ from django.db.models import Q
 from django.db.models import OuterRef, Subquery
 import openpyxl
 from django.shortcuts import get_object_or_404
+from distutils.util import strtobool
 
 
 
@@ -155,20 +156,58 @@ class VisitiasViewSet(viewsets.ModelViewSet):
     serializer_class = VisitiasSerializer
 
     @action(detail=False, methods=['GET'])
-    def obtener_info_por_matricula(self, request):
-        matricula = request.query_params.get('matricula', None)
+    def generarEstadisticasFront(self, request):
+        fecha_inicio = request.query_params.get('fecha_inicio')
+        fecha_fin = request.query_params.get('fecha_fin')
+        masculinos = request.query_params.get('masculinos')
+        femeninos = request.query_params.get('femeninos')
+        id_tipo_usuario = request.query_params.get('id_tipo_usuario')
+        id_carrera = request.query_params.get('id_carrera')
 
-        if matricula is None:
-            return Response({'error': 'Debes proporcionar una matrícula'}, status=status.HTTP_400_BAD_REQUEST)
+        fecha_inicio = timezone.datetime.strptime(fecha_inicio, '%Y-%m-%d').date() if fecha_inicio else None
+        fecha_fin = timezone.datetime.strptime(fecha_fin, '%Y-%m-%d').date() if fecha_fin else None
 
-        # Buscar el objeto RDU que tiene la matrícula proporcionada
-        rdu_instance = get_object_or_404(RDU, matricula=matricula)
 
-        # Serializar todos los campos de la entidad RDU
-        serializer = RDUSerializer(rdu_instance)
+        # Construir un filtro dinámico basado en los parámetros proporcionados
+        filtro = Q()
 
-        return Response(serializer.data)
+        if fecha_inicio and fecha_fin:
+            filtro |= Q(fechayhora__date__range=[fecha_inicio, fecha_fin])
+    
+        # Cambiar el filtro para masculinos y femeninos
+        if masculinos and masculinos.lower() == 'true' and femeninos and femeninos.lower() == 'false':
+            filtro &= Q(idRDU__sexo='MASCULINO')
+        elif femeninos and femeninos.lower() == 'true' and masculinos and masculinos.lower() == 'false':
+            filtro &= Q(idRDU__sexo='FEMENINO')
+        elif masculinos and femeninos:
+            # No necesitas agregar ninguna condición específica, ya que quieres todos los registros
+            pass
 
+
+        if id_tipo_usuario:
+            filtro &= Q(idRDU__tipoUsuario=id_tipo_usuario)
+
+        if id_carrera:
+            filtro &= Q(idRDU__id_carrera=id_carrera)
+
+        # Obtener el queryset completo con los registros que cumplen con el filtro
+        visitias_records = Visitias.objects.filter(filtro)
+
+        # Obtener los objetos RDU correspondientes
+        rdu_objects = RDU.objects.filter(id__in=visitias_records.values_list('idRDU', flat=True))
+
+        # Serializar los objetos RDU
+        serializer = RDUSerializer(rdu_objects, many=True)
+
+        # Obtener la cantidad de registros
+        cantidad_registros = visitias_records.count()
+
+        result = {
+            'cantidad_registros': cantidad_registros,
+            'registros_completos': serializer.data,
+        }
+
+        return Response(result)
 
     @action(detail=False, methods=['GET'])
     def generarReporteFront(self, request):
