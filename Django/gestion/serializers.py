@@ -13,11 +13,10 @@ class RDUSerializer(serializers.ModelSerializer):
     id_facultad = serializers.SerializerMethodField()
     nombre_tipo_usuario = serializers.SerializerMethodField()
     id_tipo_usuario = serializers.SerializerMethodField()
-    fechayhora = serializers.DateTimeField()
 
     class Meta:
         model = RDU
-        fields = ['id', 'matricula', 'nombre', 'apellidos', 'sexo', 'tipoUsuario', 'id_carrera', 'nombre_carrera', 'nombre_facultad', 'id_facultad', 'nombre_tipo_usuario', 'id_tipo_usuario', 'fechayhora']
+        fields = ['id', 'matricula', 'nombre', 'apellidos', 'sexo', 'tipoUsuario', 'id_carrera', 'nombre_carrera', 'nombre_facultad', 'id_facultad', 'nombre_tipo_usuario', 'id_tipo_usuario']
 
     def get_nombre_carrera(self, obj):
         return obj.id_carrera.nombre if obj.id_carrera else None
